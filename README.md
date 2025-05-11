@@ -2,6 +2,8 @@
 
 GitHub Actionsワークフロー内でChatwork APIを簡単に扱うためのカスタムアクションセットです。様々なChatwork API操作を抽象化し、ワークフロー内での使用を容易にします。
 
+- [Chatwork API Documentation](https://developer.chatwork.com/docs/)
+
 ## 主な機能
 
 - メッセージの送信、取得
