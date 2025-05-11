@@ -1,0 +1,34 @@
+name: 'Chatwork API Get My Tasks Action'
+description: 'Chatwork APIで自分のタスク一覧を取得する'
+author: 'kentanakae'
+
+inputs:
+  api_token:
+    description: 'Chatwork API トークン'
+    required: true
+  assigned_by_account_id:
+    description: 'タスクの依頼者のアカウントID'
+    required: false
+  status:
+    description: 'タスクのステータス（open/done）'
+    required: false
+    default: 'open'
+
+outputs:
+  status_code:
+    description: 'HTTPステータスコード'
+    value: ${{ steps.api-call.outputs.status_code }}
+  response:
+    description: 'APIレスポンス'
+    value: ${{ steps.api-call.outputs.response }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Get my tasks API
+      id: api-call
+      uses: kentanakae/chatwork-api-actions/client@v1
+      with:
+        api_token: ${{ inputs.api_token }}
+        endpoint: /my/tasks?assigned_by_account_id=${{ inputs.assigned_by_account_id }}&status=${{ inputs.status }}
+        method: GET

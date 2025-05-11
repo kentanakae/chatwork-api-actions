@@ -1,0 +1,42 @@
+name: 'Chatwork API Update Room Task Status Action'
+description: 'Chatwork APIでタスクのステータスを変更する'
+author: 'kentanakae'
+
+inputs:
+  api_token:
+    description: 'Chatwork API トークン'
+    required: true
+  room_id:
+    description: 'チャットルームのID'
+    required: true
+  task_id:
+    description: 'タスクのID'
+    required: true
+  body:
+    description: '変更理由'
+    required: false
+  status:
+    description: '新しいタスクのステータス（open/done）'
+    required: true
+
+outputs:
+  status_code:
+    description: 'HTTPステータスコード'
+    value: ${{ steps.api-call.outputs.status_code }}
+  response:
+    description: 'APIレスポンス'
+    value: ${{ steps.api-call.outputs.response }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Update room task status API
+      id: api-call
+      uses: kentanakae/chatwork-api-actions/client@v1
+      with:
+        api_token: ${{ inputs.api_token }}
+        endpoint: /rooms/${{ inputs.room_id }}/tasks/${{ inputs.task_id }}/status
+        method: PUT
+        params: |
+          --header "content-type: application/x-www-form-urlencoded"
+          --data "body=${{ inputs.body }}&status=${{ inputs.status }}"

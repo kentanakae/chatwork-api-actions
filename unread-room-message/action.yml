@@ -1,0 +1,36 @@
+name: 'Chatwork API Unread Room Message Action'
+description: 'Chatwork APIでチャットルームのメッセージを未読にする'
+author: 'kentanakae'
+
+inputs:
+  api_token:
+    description: 'Chatwork API トークン'
+    required: true
+  room_id:
+    description: 'チャットルームのID'
+    required: true
+  message_id:
+    description: '未読にするメッセージのID'
+    required: true
+
+outputs:
+  status_code:
+    description: 'HTTPステータスコード'
+    value: ${{ steps.api-call.outputs.status_code }}
+  response:
+    description: 'APIレスポンス'
+    value: ${{ steps.api-call.outputs.response }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Unread room message API
+      id: api-call
+      uses: kentanakae/chatwork-api-actions/client@v1
+      with:
+        api_token: ${{ inputs.api_token }}
+        endpoint: /rooms/${{ inputs.room_id }}/messages/unread
+        method: PUT
+        params: |
+          --header "content-type: application/x-www-form-urlencoded"
+          --data "message_id=${{ inputs.message_id }}"

@@ -1,0 +1,78 @@
+name: 'Chatwork API Action'
+description: 'Chatwork APIを実行するアクション'
+author: 'kentanakae'
+
+inputs:
+  api_token:
+    description: 'Chatwork API トークン'
+    required: true
+  endpoint:
+    description: 'Chatwork API エンドポイント'
+    required: true
+  method:
+    description: 'HTTPメソッド'
+    required: true
+    default: 'GET'
+  params:
+    description: 'APIパラメータ（コマンドライン引数形式または--data "key=value"形式でフォームデータ指定も可能）'
+    required: false
+    default: ''
+
+outputs:
+  status_code:
+    description: 'HTTPステータスコード'
+    value: ${{ steps.api-call.outputs.status_code }}
+  response:
+    description: 'APIレスポンス'
+    value: ${{ steps.api-call.outputs.response }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Chatwork API Call
+      id: api-call
+      shell: bash
+      env:
+        API_TOKEN: ${{ inputs.api_token }}
+        ENDPOINT: ${{ inputs.endpoint }}
+        METHOD: ${{ inputs.method }}
+        PARAMS: ${{ inputs.params }}
+      run: |
+        # 共通オプションを設定
+        CURL_OPTS=(
+          --request "$METHOD"
+          --url "https://api.chatwork.com/v2$ENDPOINT"
+          --header "accept: application/json"
+          --header "x-chatworktoken: ${API_TOKEN}"
+          -o response.json
+          -w "%{http_code}"
+        )
+
+        # パラメータを処理
+        if [[ -n "$PARAMS" ]]; then
+          # 改行を空白に変換
+          MULTILINE_PARAMS=$(echo "$PARAMS" | tr '\n' ' ')
+
+          # 引用符を考慮したパラメータ分割処理（シェルにパースさせる）
+          eval "PARAM_ARRAY=($MULTILINE_PARAMS)"
+
+          # 配列をcurlオプションに追加
+          for param in "${PARAM_ARRAY[@]}"; do
+            CURL_OPTS+=("$param")
+          done
+        fi
+
+        # デバッグ出力
+        echo "実行するcurlコマンド: curl ${CURL_OPTS[*]}"
+
+        STATUS_CODE=$(curl "${CURL_OPTS[@]}")
+        RESPONSE=$(cat response.json)
+
+        echo "status_code=$STATUS_CODE" >> $GITHUB_OUTPUT
+        echo "response=$RESPONSE" >> $GITHUB_OUTPUT
+        rm -f response.json
+
+        if [ "$STATUS_CODE" -ge 400 ]; then
+          echo "::error::API request failed with status $STATUS_CODE: $RESPONSE"
+          exit 1
+        fi

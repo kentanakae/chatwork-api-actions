@@ -1,0 +1,27 @@
+name: 'Chatwork API Get Rooms Action'
+description: 'Chatwork APIでチャットルーム一覧を取得する'
+author: 'kentanakae'
+
+inputs:
+  api_token:
+    description: 'Chatwork API トークン'
+    required: true
+
+outputs:
+  status_code:
+    description: 'HTTPステータスコード'
+    value: ${{ steps.api-call.outputs.status_code }}
+  response:
+    description: 'APIレスポンス'
+    value: ${{ steps.api-call.outputs.response }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Get rooms API
+      id: api-call
+      uses: kentanakae/chatwork-api-actions/client@v1
+      with:
+        api_token: ${{ inputs.api_token }}
+        endpoint: /rooms
+        method: GET

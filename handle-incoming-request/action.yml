@@ -1,0 +1,36 @@
+name: 'Chatwork API Handle Incoming Request Action'
+description: 'Chatwork APIでコンタクト承認依頼を承認・拒否する'
+author: 'kentanakae'
+
+inputs:
+  api_token:
+    description: 'Chatwork API トークン'
+    required: true
+  request_id:
+    description: 'コンタクト承認依頼のID'
+    required: true
+  action:
+    description: '承認か拒否か（accept/deny）'
+    required: true
+
+outputs:
+  status_code:
+    description: 'HTTPステータスコード'
+    value: ${{ steps.api-call.outputs.status_code }}
+  response:
+    description: 'APIレスポンス'
+    value: ${{ steps.api-call.outputs.response }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Handle incoming request API
+      id: api-call
+      uses: kentanakae/chatwork-api-actions/client@v1
+      with:
+        api_token: ${{ inputs.api_token }}
+        endpoint: /incoming_requests/${{ inputs.request_id }}
+        method: PUT
+        params: |
+          --header "content-type: application/x-www-form-urlencoded"
+          --data "action=${{ inputs.action }}"

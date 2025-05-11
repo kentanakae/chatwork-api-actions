@@ -1,0 +1,83 @@
+name: 'Chatwork API Update Room Action'
+description: 'Chatwork APIでチャットルームの情報を更新する'
+author: 'kentanakae'
+
+inputs:
+  api_token:
+    description: 'Chatwork API トークン'
+    required: true
+  room_id:
+    description: 'チャットルームのID'
+    required: true
+  name:
+    description: '新しいチャットルーム名'
+    required: false
+  description:
+    description: '新しいチャットルームの説明'
+    required: false
+  icon_preset:
+    description: '新しいアイコン種類（group/check/document/meeting/event/project/business/study/security/star/idea/heart/magcup/beer/music/sports/travel）'
+    required: false
+
+outputs:
+  status_code:
+    description: 'HTTPステータスコード'
+    value: ${{ steps.api-call.outputs.status_code }}
+  response:
+    description: 'APIレスポンス'
+    value: ${{ steps.api-call.outputs.response }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Build params
+      id: build-params
+      shell: bash
+      run: |
+        DATA_PARAMS="" # 連結するパラメータ文字列
+
+        # nameパラメータを追加 (URLエンコード)
+        if [ -n "${{ inputs.name }}" ]; then
+          export INPUT_NAME_VAL="${{ inputs.name }}"
+          name_encoded=$(python -c "import os, urllib.parse; print(urllib.parse.quote(os.environ['INPUT_NAME_VAL']))")
+          unset INPUT_NAME_VAL
+          DATA_PARAMS="name=${name_encoded}"
+        fi
+
+        # descriptionパラメータを追加 (URLエンコード)
+        if [ -n "${{ inputs.description }}" ]; then
+          export INPUT_DESC_VAL="${{ inputs.description }}"
+          desc_encoded=$(python -c "import os, urllib.parse; print(urllib.parse.quote(os.environ['INPUT_DESC_VAL']))")
+          unset INPUT_DESC_VAL
+          if [ -n "$DATA_PARAMS" ]; then
+            DATA_PARAMS="${DATA_PARAMS}&description=${desc_encoded}"
+          else
+            DATA_PARAMS="description=${desc_encoded}"
+          fi
+        fi
+
+        # icon_presetパラメータを追加 (URLエンコード)
+        if [ -n "${{ inputs.icon_preset }}" ]; then
+          export INPUT_ICON_VAL="${{ inputs.icon_preset }}"
+          icon_encoded=$(python -c "import os, urllib.parse; print(urllib.parse.quote(os.environ['INPUT_ICON_VAL']))")
+          unset INPUT_ICON_VAL
+          if [ -n "$DATA_PARAMS" ]; then
+            DATA_PARAMS="${DATA_PARAMS}&icon_preset=${icon_encoded}"
+          else
+            DATA_PARAMS="icon_preset=${icon_encoded}"
+          fi
+        fi
+
+        # 最終的に DATA_PARAMS はURLエンコードされた1行の文字列になる
+        echo "data=${DATA_PARAMS}" >> "$GITHUB_OUTPUT"
+
+    - name: Update room API
+      id: api-call
+      uses: kentanakae/chatwork-api-actions/client@v1
+      with:
+        api_token: ${{ inputs.api_token }}
+        endpoint: /rooms/${{ inputs.room_id }}
+        method: PUT
+        params: |
+          --header "content-type: application/x-www-form-urlencoded"
+          --data "${{ steps.build-params.outputs.data }}"

@@ -1,0 +1,64 @@
+name: 'Chatwork API Create Room Action'
+description: 'Chatwork APIで新しいチャットルームを作成する'
+author: 'kentanakae'
+
+inputs:
+  api_token:
+    description: 'Chatwork API トークン'
+    required: true
+  name:
+    description: 'チャットルーム名'
+    required: true
+  members_admin_ids:
+    description: '管理者権限を持つユーザーのアカウントIDリスト（カンマ区切り）'
+    required: true
+  members_member_ids:
+    description: 'メンバー権限を持つユーザーのアカウントIDリスト（カンマ区切り）'
+    required: false
+    default: ''
+  members_readonly_ids:
+    description: '閲覧のみ権限を持つユーザーのアカウントIDリスト（カンマ区切り）'
+    required: false
+    default: ''
+  description:
+    description: 'チャットルームの説明'
+    required: false
+    default: ''
+  icon_preset:
+    description: 'アイコン種類（group/check/document/meeting/event/project/business/study/security/star/idea/heart/magcup/beer/music/sports/travel）'
+    required: false
+    default: 'group'
+  link:
+    description: '招待リンクを作成するか（0:作成しない, 1:作成する）'
+    required: false
+    default: '0'
+  link_code:
+    description: '招待リンクのパスワード'
+    required: false
+    default: ''
+  link_need_acceptance:
+    description: '招待リンクを承認制にするか（0:承認制にしない, 1:承認制にする）'
+    required: false
+    default: '0'
+
+outputs:
+  status_code:
+    description: 'HTTPステータスコード'
+    value: ${{ steps.api-call.outputs.status_code }}
+  response:
+    description: 'APIレスポンス'
+    value: ${{ steps.api-call.outputs.response }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Create room API
+      id: api-call
+      uses: kentanakae/chatwork-api-actions/client@v1
+      with:
+        api_token: ${{ inputs.api_token }}
+        endpoint: /rooms
+        method: POST
+        params: |
+          --header "content-type: application/x-www-form-urlencoded"
+          --data "name=${{ inputs.name }}&description=${{ inputs.description }}&icon_preset=${{ inputs.icon_preset }}&members_admin_ids=${{ inputs.members_admin_ids }}&members_member_ids=${{ inputs.members_member_ids }}&members_readonly_ids=${{ inputs.members_readonly_ids }}&link=${{ inputs.link }}&link_code=${{ inputs.link_code }}&link_need_acceptance=${{ inputs.link_need_acceptance }}"
