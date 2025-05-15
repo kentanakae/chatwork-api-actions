@@ -28,6 +28,13 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - name: Encode message body
+      id: encode-body
+      shell: bash
+      run: |
+        ENCODED_BODY=$(echo '${{ inputs.body }}' | jq -sRr @uri)
+        echo "encoded_body=$ENCODED_BODY" >> $GITHUB_OUTPUT
+
     - name: Send message API
       id: api-call
       uses: kentanakae/chatwork-api-actions/client@v1
@@ -37,4 +44,4 @@ runs:
         method: POST
         params: |
           --header "content-type: application/x-www-form-urlencoded"
-          --data "body=${{ inputs.body }}&self_unread=${{ inputs.self_unread }}"
+          --data "body=${{ steps.encode-body.outputs.encoded_body }}&self_unread=${{ inputs.self_unread }}"

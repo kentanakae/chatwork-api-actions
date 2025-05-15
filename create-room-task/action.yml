@@ -33,6 +33,13 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - name: Encode task body
+      id: encode-body
+      shell: bash
+      run: |
+        ENCODED_BODY=$(echo '${{ inputs.body }}' | jq -sRr @uri)
+        echo "encoded_body=$ENCODED_BODY" >> $GITHUB_OUTPUT
+
     - name: Create task API
       id: api-call
       uses: kentanakae/chatwork-api-actions/client@v1
@@ -42,4 +49,4 @@ runs:
         method: POST
         params: |
           --header "content-type: application/x-www-form-urlencoded"
-          --data "body=${{ inputs.body }}&to_ids=${{ inputs.to_ids }}&limit=${{ inputs.limit }}&limit_type=${{ inputs.limit_type }}"
+          --data "body=${{ steps.encode-body.outputs.encoded_body }}&to_ids=${{ inputs.to_ids }}&limit=${{ inputs.limit }}&limit_type=${{ inputs.limit_type }}"
